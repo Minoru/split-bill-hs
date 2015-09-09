@@ -75,12 +75,12 @@ Okay, so the first thing we need is a main loop. The idea is simple: the program
 will run as long as there are bills to process. This is a do-while loop, 'cause
 we're asking the question at the end, not the beginning:
 
-> mainLoop :: IO () -> IO ()
-> mainLoop action = do
+> whileThereAreBills :: IO () -> IO ()
+> whileThereAreBills action = do
 >   action
 >   answer <- ask "Are there more bills to process? (y/n)" yesNoAnswersMap
 >   case answer of
->     Yes -> mainLoop action
+>     Yes -> whileThereAreBills action
 >     No  -> return ()
 
-> main = mainLoop (return ())
+> main = whileThereAreBills (return ())
