@@ -2,8 +2,8 @@ Let's do this Literate Haskell style!
 
 First, mandatory imports:
 
+> import Control.Exception
 > import Control.Monad
-> import GHC.IO.Handle
 > import System.IO
 >
 > import Data.Map as Map
@@ -14,18 +14,40 @@ acceptable answers. Each of the acceptable answers is accompanied with a value
 that will be returned if that answer is chosen:
 
 > ask :: String -> Map Char a -> IO a
-> ask question answers = do
+> ask question answers = withoutBuffering $ do
 >   putStr question
 >   unless (last question == ' ') $ putStr " "
 >   answer <- getChar
-
-Now here comes a question: shouldn't we have put the `stdin` into no-buffering
-mode? The answer is "yes, we *did*"; that code will reside in `main`.
-
 >   putStrLn ""
 >   case Map.lookup answer answers of
 >     Just value -> return value
 >     Nothing    -> ask question answers
+
+`withoutBuffering` is a simple wrapper that makes sure that an action is
+performed with line buffering disabled, and also resets it to its previous value
+when the action is completed; `withBuffering` is a compliment function. To
+define those, we first need a generic wrapper function that will set specified
+buffering mode for the action:
+
+> withBufferMode :: BufferMode -> IO a -> IO a
+> withBufferMode mode action = bracket initialize finalize (const action)
+>   where
+>   initialize = do
+>     bufferMode <- hGetBuffering stdin
+>     hSetBuffering stdin mode
+>     return bufferMode
+>
+>   finalize initialMode = hSetBuffering stdin initialMode
+
+Now let's define our pair of wrappers:
+
+> withBuffering :: IO a -> IO a
+> withBuffering = withBufferMode LineBuffering
+>
+> withoutBuffering :: IO a -> IO a
+> withoutBuffering = withBufferMode NoBuffering
+
+Nice work! Let's switch gears.
 
 The most popular type of questions is yes-no questions. Let's define an ADT for
 those:
@@ -46,12 +68,4 @@ we're asking the question at the end, not the beginning:
 >     Yes -> mainLoop action
 >     No  -> return ()
 
-Don't forget about setting (and resetting) the buffering mode for `stdin`!
-
-> main = do
->   bufferMode <- hGetBuffering stdin
->   hSetBuffering stdin NoBuffering
->
->   mainLoop (return ())
->
->   hSetBuffering stdin bufferMode
+> main = mainLoop (return ())
