@@ -80,7 +80,9 @@ we're asking the question at the end, not the beginning:
 >   action
 >   answer <- ask "Are there more bills to process? (y/n)" yesNoAnswersMap
 >   case answer of
->     Yes -> whileThereAreBills action
+>     Yes -> do
+>       action
+>       whileThereAreBills action
 >     No  -> return ()
 
 > main = whileThereAreBills (return ())
