@@ -1,6 +1,16 @@
 Let's do this Literate Haskell style!
 
-First, mandatory imports:
+**The problem**: me and a friend of mine do our groceries shopping together, so
+I've got a ton of bills that need to be accounted for in my ledger. Each item in
+a bill should be categorized (food, sweets, misc expenses), and then I also need
+to calculate who owes whom and how much. I did a bit of that by hand, but it's
+a drudgery and I'd rather automate what I can.
+
+This program is not meant as a generic solution for this class of problems. It
+only suits my need: two persons, three accounts. But you're free to take it as
+a basis for your own, if you need one.
+
+Now let's get rolling. First, mandatory imports:
 
 > import Control.Exception
 > import Control.Monad
