@@ -7,13 +7,14 @@ to calculate who owes whom and how much. I did a bit of that by hand, but it's
 a drudgery and I'd rather automate what I can.
 
 This program is not meant as a generic solution for this class of problems. It
-only suits my need: two persons, three accounts. But you're free to take it as
-a basis for your own, if you need one.
+only suits my need: two persons, three accounts, one currency. But you're free
+to take it as a basis for your own, if you need one.
 
 Now let's get rolling. First, mandatory imports:
 
 > import Control.Exception
 > import Control.Monad
+> import Data.Decimal
 > import System.IO
 >
 > import Data.Map as Map
@@ -85,4 +86,72 @@ we're asking the question at the end, not the beginning:
 >       whileThereAreBills action
 >     No  -> return ()
 
-> main = whileThereAreBills (return ())
+Great! Now let's see what we do with each bill.
+
+First of all, we need to know who paid for it, so we know who's owing who. That
+directly translated into the following type:
+
+> data WhoPaidQuestion = Me | He
+>
+> whoPaidAnswersMap :: AnswersMap WhoPaidQuestion
+> whoPaidAnswersMap = Map.fromList [ ('m', Me), ('h', He) ]
+
+Then, for each item we need to know its cost, for whom it was bought (me, him,
+both) and what category (food, sweets, misc) it should be counted towards. We'll
+dead with the cost later; let's tackle questions first.
+
+> data BoughtForWhomQuestion = ForMe | ForHim | ForBoth
+>
+> boughtForWhomAnswersMap :: AnswersMap BoughtForWhomQuestion
+> boughtForWhomAnswersMap =
+>   Map.fromList [ ('m', ForMe), ('h', ForHim), ('b', ForBoth) ]
+>
+> data CategoryQuestion = Food | Sweets | Misc
+>
+> categoryAnswersMap :: AnswersMap CategoryQuestion
+> categoryAnswersMap =
+>   Map.fromList [ ('f', Food), ('s', Sweets), ('m', Misc) ]
+
+Right. So what's the next step? Well, obviously, while processing the items of
+a bill, we need to carry around a bit of state, namely, how much money we spent
+for each category, and how much we borrowed or lent. For that, let's define
+a data type:
+
+> data BillProcessingState = BillProcessingState {
+>     food   :: Decimal
+>   , sweets :: Decimal
+>   , misc   :: Decimal
+>   , lent   :: Decimal }
+>
+> defaultBillProcessingState = BillProcessingState 0 0 0 0
+
+So now let's define our "main loop" for processing a bill:
+
+> processBill :: IO ()
+
+We won't be returning anything, 'cause the sole purpose of this function is to
+have a side effect — we'll be writing to `hledger.journal`.
+
+The function should start with asking all the questions mentioned above:
+
+> processBill = do
+>   payee <- ask "Who paid? ([m]e/[h]e)" whoPaidAnswersMap
+>   state <- whileThereAreItems payee defaultBillProcessingState $ \state -> do
+>     boughtFor <- ask "Bought for whom? ([m]e / [h]im / [b]oth)"
+>                      boughtForWhomAnswersMap
+>     category <- ask
+>       "What category this item belongs to? ([f]ood / [s]weets / [m]isc)"
+>       categoryAnswersMap
+>
+>     return state
+>
+>   return ()
+
+> whileThereAreItems :: WhoPaidQuestion -> BillProcessingState
+>                    -> (BillProcessingState -> IO BillProcessingState)
+>                    -> IO BillProcessingState
+> whileThereAreItems = undefined
+
+Now let's tie it all together:
+
+> main = whileThereAreBills processBill
