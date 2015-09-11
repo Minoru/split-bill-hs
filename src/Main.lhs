@@ -151,11 +151,20 @@ The function should start with asking all the questions mentioned above:
 >
 >   return state
 
+And now it's time to finally implement "main loop" for item processing. This one
+is quite similar to the program's main loop, `whileThereAreBills`, so I won't
+waste time on explaining it:
+
 > whileThereAreItems :: WhoPaidQuestion -> BillProcessingState
 >                    -> (WhoPaidQuestion -> BillProcessingState
 >                        -> IO BillProcessingState)
 >                    -> IO BillProcessingState
-> whileThereAreItems = undefined
+> whileThereAreItems payee state action = do
+>   state' <- action payee state
+>   answer <- ask "Is that all for this bill? (y/n)" yesNoAnswersMap
+>   case answer of
+>     Yes -> return state'
+>     No  -> whileThereAreItems payee state' action
 
 Now let's tie it all together:
 
