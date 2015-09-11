@@ -31,6 +31,7 @@ answers coupled with it values):
 > ask question answers = withoutBuffering $ do
 >   putStr question
 >   unless (last question == ' ') $ putStr " "
+>   hFlush stdout
 >   answer <- getChar
 >   putStrLn ""
 >   case Map.lookup answer answers of
