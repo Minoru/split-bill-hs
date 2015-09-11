@@ -133,22 +133,40 @@ So now let's define our "main loop" for processing a bill:
 We won't be returning anything, 'cause the sole purpose of this function is to
 have a side effect — we'll be writing to `hledger.journal`.
 
-The function should start with asking all the questions mentioned above:
+What do we need to know about the bill? First of all, the date it was obtained.
+Second, we need to know who paid it. Then we also need to know what items it
+contains, how much each of them cost, what category each of them belong to, and
+who uses the item. Let's put that knowledge into the code!
 
 > processBill = do
->   payee <- ask "Who paid? ([m]e/[h]e)" whoPaidAnswersMap
+>   date  <- askForBillDate
+>   payee <- ask "Who paid for this bill? ([m]e/[h]e)" whoPaidAnswersMap
 >   state <- whileThereAreItems payee defaultBillProcessingState processItem
->   return ()
->
+>   dumpTransaction date state
+
+But how exactly an item is processed? Let's dig in!
+
 > processItem :: WhoPaidQuestion -> BillProcessingState
 >             -> IO BillProcessingState
 > processItem payee state = do
+>   cost <- askForCost
 >   boughtFor <- ask "Bought for whom? ([m]e / [h]im / [b]oth)"
 >                    boughtForWhomAnswersMap
 >   category <- ask
 >     "What category this item belongs to? ([f]ood / [s]weets / [m]isc)"
 >     categoryAnswersMap
->
+
+Okay, the questions are asked, the answers are obtained. Now it's time to decide
+which account, if any, to increment, and who owes whom. Let's start with
+increment; for starters, let's calculate how much accounts' balance should be
+changed. Clearly, that only depends on who will use the item: I don't pay for
+anything I don't use, and I only pay half if the item is split between us:
+
+>   cost' <- case boughtFor of
+>     ForMe   -> cost
+>     ForHim  -> 0
+>     ForBoth -> cost / 2
+
 >   return state
 
 And now it's time to finally implement "main loop" for item processing. This one
