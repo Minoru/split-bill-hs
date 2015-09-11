@@ -137,19 +137,23 @@ The function should start with asking all the questions mentioned above:
 
 > processBill = do
 >   payee <- ask "Who paid? ([m]e/[h]e)" whoPaidAnswersMap
->   state <- whileThereAreItems payee defaultBillProcessingState $ \state -> do
->     boughtFor <- ask "Bought for whom? ([m]e / [h]im / [b]oth)"
->                      boughtForWhomAnswersMap
->     category <- ask
->       "What category this item belongs to? ([f]ood / [s]weets / [m]isc)"
->       categoryAnswersMap
->
->     return state
->
+>   state <- whileThereAreItems payee defaultBillProcessingState processItem
 >   return ()
+>
+> processItem :: WhoPaidQuestion -> BillProcessingState
+>             -> IO BillProcessingState
+> processItem payee state = do
+>   boughtFor <- ask "Bought for whom? ([m]e / [h]im / [b]oth)"
+>                    boughtForWhomAnswersMap
+>   category <- ask
+>     "What category this item belongs to? ([f]ood / [s]weets / [m]isc)"
+>     categoryAnswersMap
+>
+>   return state
 
 > whileThereAreItems :: WhoPaidQuestion -> BillProcessingState
->                    -> (BillProcessingState -> IO BillProcessingState)
+>                    -> (WhoPaidQuestion -> BillProcessingState
+>                        -> IO BillProcessingState)
 >                    -> IO BillProcessingState
 > whileThereAreItems = undefined
 
