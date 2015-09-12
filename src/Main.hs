@@ -3,11 +3,11 @@ import Control.Monad
 import Data.Decimal
 import System.IO
 
-import Data.Map as Map
+import qualified Data.Map as Map
 
 -- | `AnswersMap` binds textual answers to values of some type so that we can
 -- easily pattern-match on them later.
-type AnswersMap a = Map Char a
+type AnswersMap a = Map.Map Char a
 
 
 -- ####
