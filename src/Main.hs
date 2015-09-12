@@ -89,7 +89,9 @@ whileThereAreBills action = do
   action
   answer <- ask "Are there more bills to process? (y/n)" yesNoAnswersMap
   case answer of
-    Yes -> whileThereAreBills action
+    Yes -> do
+      putStrLn ""
+      whileThereAreBills action
     No  -> return ()
 
 -- | Ask who paid the bill, then process each of the items of the bill and dump
