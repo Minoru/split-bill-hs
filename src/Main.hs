@@ -199,6 +199,43 @@ askForCost = withBuffering $ do
            && (length (tail str') <= 2)
            )
 
-dumpTransaction = undefined
+-- | Write the transaction into `hledger.journal`
+dumpTransaction :: String -> BillProcessingState -> IO ()
+dumpTransaction date state = do
+  let str = transactionToString
+  putStrLn str
+
+  where
+    offset = "    "
+
+    transactionToString = unlines $
+      [ unwords $ [date, "Сходили с Вадиком в «Сельпо»"]
+      , concat $ [ offset, "expenses:food       "
+                 , offset, amountToString $ food state ]
+      , concat $ [ offset, "expenses:food:sweets"
+                 , offset, amountToString $ sweets state ]
+      , concat $ [ offset, "expenses:misc       "
+                 , offset, amountToString $ misc state ]
+      ]
+      ++ debit
+      ++ credit
+
+    debit =
+      if (wallet state < 0)
+        then [ concat [ offset, "assets:cash:envelope"
+                      , offset, amountToString $ wallet state
+                      ]
+             ]
+        else []
+
+    credit =
+      if (debt state /= 0)
+        then [ concat [ offset, "assets:loan:vadim   "
+                      , offset, amountToString $ debt state
+                      ]
+             ]
+        else []
+
+    amountToString = show
 
 main = whileThereAreBills processBill
