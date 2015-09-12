@@ -1,5 +1,6 @@
 import Control.Exception
 import Control.Monad
+import Data.Char
 import Data.Decimal
 import System.IO
 
@@ -143,7 +144,29 @@ processItem payee state = do
     ForBoth -> return $ cost / 2
   return state
 
-askForBillDate = undefined
+-- | Ask for the bill's date in YYYY/MM/DD format
+askForBillDate :: IO String
+askForBillDate = withBuffering $ do
+  putStr "Date (YYYY/MM/DD): "
+  hFlush stdout
+  date <- liftM trim getLine
+  if (isMalformed date)
+    then askForBillDate
+    else return date
+
+  where
+    trim :: String -> String
+    trim str = let d = dropWhile isSpace in reverse $ d $ reverse $ d str
+
+    isMalformed :: String -> Bool
+    isMalformed s =
+      not $
+         (length s == 10)
+      && (all isDigit $ take 4 s)
+      && (s !! 4 == '/')
+      && (all isDigit $ take 2 $ drop 5 s)
+      && (s !! 7 == '/')
+      && (all isDigit $ take 2 $ drop 8 s)
 
 dumpTransaction = undefined
 
