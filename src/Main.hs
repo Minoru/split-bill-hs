@@ -144,6 +144,14 @@ processItem payee state = do
     ForBoth -> return $ cost / 2
   return state
 
+-- | Trim whitespace (' ', \t, \n, \r, \f, \v) from both ends of the line
+--
+-- Highly inefficient, don't use on huge strings!
+trim :: String -> String
+trim str =
+  let dropSpaces = dropWhile isSpace
+  in reverse $ dropSpaces $ reverse $ dropSpaces str
+
 -- | Ask for the bill's date in YYYY/MM/DD format
 askForBillDate :: IO String
 askForBillDate = withBuffering $ do
@@ -155,9 +163,7 @@ askForBillDate = withBuffering $ do
     else return date
 
   where
-    trim :: String -> String
-    trim str = let d = dropWhile isSpace in reverse $ d $ reverse $ d str
-
+    -- | The date should be in YYYY/MM/DD format
     isMalformed :: String -> Bool
     isMalformed s =
       not $
@@ -168,8 +174,29 @@ askForBillDate = withBuffering $ do
       && (s !! 7 == '/')
       && (all isDigit $ take 2 $ drop 8 s)
 
-dumpTransaction = undefined
+-- | Ask user how much an item cost
+askForCost :: IO Decimal
+askForCost = withBuffering $ do
+  putStr "Cost: "
+  hFlush stdout
+  cost <- liftM trim getLine
+  if (isMalformed cost)
+    then askForCost
+    else return $ read cost
 
-askForCost = undefined
+  where
+    -- | The cost is valid if it's a series of digits followed by a dot and
+    -- another series of digits. The latter shouldn't be longer than two chars
+    isMalformed :: String -> Bool
+    isMalformed str =
+      let str' = dropWhile isDigit str
+      in not $
+           (null str')
+        || (  (head str' == '.')
+           && (all isDigit $ tail str')
+           && (length (tail str') <= 2)
+           )
+
+dumpTransaction = undefined
 
 main = whileThereAreBills processBill
