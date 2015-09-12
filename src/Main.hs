@@ -140,11 +140,22 @@ processItem payee state = do
   category <- ask
     "What category this item belongs to? ([f]ood / [s]weets / [m]isc)"
     categoryAnswersMap
-  cost' <- case boughtFor of
-    ForMe   -> return   cost
-    ForHim  -> return   0
-    ForBoth -> return $ cost / 2
-  return state
+
+  return $ processItem' state payee cost boughtFor category
+
+processItem' :: BillProcessingState
+             -> WhoPaidQuestion
+             -> Decimal
+             -> BoughtForWhomQuestion
+             -> CategoryQuestion
+             -> BillProcessingState
+processItem' state payee cost boughtFor category =
+  let cost' = case boughtFor of
+                ForMe   -> cost
+                ForHim  -> 0
+                ForBoth -> cost / 2
+  in state
+
 
 -- | Trim whitespace (' ', \t, \n, \r, \f, \v) from both ends of the line
 --
