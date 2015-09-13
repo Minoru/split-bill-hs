@@ -1,9 +1,14 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module SplitBill where
 
 import Control.Exception
 import Control.Monad
 import Data.Char
 import Data.Decimal
+import System.Directory
+import System.Environment
+import System.FilePath
 import System.IO
 
 import qualified Data.Map as Map
@@ -244,11 +249,47 @@ askForCost = withBuffering $ do
            && (length (tail str') <= 2)
            )
 
+-- | Get the default journal file path specified by the environment.
+-- Like ledger, we look first for the LEDGER_FILE environment
+-- variable, and if that does not exist, for the legacy LEDGER
+-- environment variable. If neither is set, or the value is blank,
+-- return the hard-coded default, which is @.hledger.journal@ in the
+-- users's home directory (or in the current directory, if we cannot
+-- determine a home directory).
+--
+-- Shamelessly stolen from hledger's code.
+defaultJournalPath :: IO String
+defaultJournalPath = do
+  s <- envJournalPath
+  if null s then defaultJournalPath else return s
+    where
+      envJournalPath =
+        getEnv "LEDGER_FILE"
+         `catch` (\(_::IOException) -> getEnv "LEDGER"
+                                            `catch` (\(_::IOException) -> return ""))
+      defaultJournalPath = do
+                  home <- getHomeDirectory `catch` (\(_::IOException) -> return "")
+                  return $ home </> ".hledger.journal"
+
 -- | Write the transaction into `hledger.journal`
 dumpTransaction :: String -> BillProcessingState -> IO ()
 dumpTransaction date state = do
   let str = transactionToString
+
+  putStrLn ""
   putStrLn str
+
+  good <- withoutBuffering $
+    ask
+      "Write this transaction to the journal? (y/n) "
+      yesNoAnswersMap
+
+  case good of
+    Yes -> do
+      path <- defaultJournalPath
+      putStrLn $ "Writing to " ++ path
+      appendFile path ("\n" ++ str)
+    No  -> return ()
 
   where
     offset = "    "

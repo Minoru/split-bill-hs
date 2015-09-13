@@ -17,16 +17,20 @@ library
   exposed-modules:     SplitBill
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
-                       , containers
                        , Decimal
+                       , containers
+                       , directory
+                       , filepath
 
 executable split-bill
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
-                       , containers
                        , Decimal
+                       , containers
+                       , directory
+                       , filepath
                        , split-bill
 
 test-suite split-bill-tests
@@ -36,7 +40,7 @@ test-suite split-bill-tests
   other-modules:       TestHelpers
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                       , Decimal
+                       , split-bill
                        , tasty
                        , tasty-hunit
-                       , split-bill
-                       , Decimal
