@@ -292,48 +292,19 @@ dumpTransaction date state = do
     No  -> return ()
 
   where
-    offset = "    "
-
     transactionToString = unlines $
       [ unwords $ [date, "Сходили с Вадиком в «Сельпо»"] ]
-      ++ food'
-      ++ sweets'
-      ++ misc'
-      ++ debit
-      ++ credit
+      ++ (transactionLine (food state)   (/= 0) "expenses:food       ")
+      ++ (transactionLine (sweets state) (/= 0) "expenses:food:sweets")
+      ++ (transactionLine (misc state)   (/= 0) "expenses:misc       ")
+      ++ (transactionLine (wallet state) (<  0) "assets:cash:envelope")
+      ++ (transactionLine (loan state)   (/= 0) "assets:loan:vadim   ")
 
-    food' =
-      if (food state /= 0)
-        then [ concat $ [ offset, "expenses:food       "
-                        , offset, amountToString $ food state ] ]
+    transactionLine value condition account =
+      if (condition value)
+        then [ concat [ offset, account, offset, amountToString value ] ]
         else []
 
-    sweets' =
-      if (sweets state /= 0)
-        then [ concat $ [ offset, "expenses:food:sweets"
-                        , offset, amountToString $ sweets state ] ]
-        else []
-
-    misc' =
-      if (misc state /= 0)
-        then [ concat $ [ offset, "expenses:misc       "
-                        , offset, amountToString $ misc state ] ]
-        else []
-
-    debit =
-      if (wallet state < 0)
-        then [ concat [ offset, "assets:cash:envelope"
-                      , offset, amountToString $ wallet state
-                      ]
-             ]
-        else []
-
-    credit =
-      if (loan state /= 0)
-        then [ concat [ offset, "assets:loan:vadim   "
-                      , offset, amountToString $ loan state
-                      ]
-             ]
-        else []
+    offset = "    "
 
     amountToString = show
