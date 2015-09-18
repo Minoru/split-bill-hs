@@ -295,16 +295,30 @@ dumpTransaction date state = do
     offset = "    "
 
     transactionToString = unlines $
-      [ unwords $ [date, "Сходили с Вадиком в «Сельпо»"]
-      , concat $ [ offset, "expenses:food       "
-                 , offset, amountToString $ food state ]
-      , concat $ [ offset, "expenses:food:sweets"
-                 , offset, amountToString $ sweets state ]
-      , concat $ [ offset, "expenses:misc       "
-                 , offset, amountToString $ misc state ]
-      ]
+      [ unwords $ [date, "Сходили с Вадиком в «Сельпо»"] ]
+      ++ food'
+      ++ sweets'
+      ++ misc'
       ++ debit
       ++ credit
+
+    food' =
+      if (food state /= 0)
+        then [ concat $ [ offset, "expenses:food       "
+                        , offset, amountToString $ food state ] ]
+        else []
+
+    sweets' =
+      if (sweets state /= 0)
+        then [ concat $ [ offset, "expenses:food:sweets"
+                        , offset, amountToString $ sweets state ] ]
+        else []
+
+    misc' =
+      if (misc state /= 0)
+        then [ concat $ [ offset, "expenses:misc       "
+                        , offset, amountToString $ misc state ] ]
+        else []
 
     debit =
       if (wallet state < 0)
